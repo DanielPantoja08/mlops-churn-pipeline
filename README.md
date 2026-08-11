@@ -25,7 +25,7 @@ Un modelo entrenado con enero–junio de 2024 se pone a servir y se vigila duran
 |---|---|---|---|---|
 | 2024-07 → 08 | Nada | 7 % → 14 % | ~0.865 | Ninguna |
 | **2024-09 → 12** | **Data drift**: el consumo medio pasa de 12 a 20 GB y cambia el método de pago | 21 % → **36 %** | **0.847 – 0.869 (estable)** | **Vigilar, NO reentrenar** |
-| **2025-01 → 06** | **Concept drift**: los tickets de soporte dejan de predecir el churn | 36 % → 43 % | **0.78 – 0.80 (cae 6 pts)** | **Reentrenar** |
+| **2025-01 → 06** | **Concept drift**: los tickets de soporte dejan de predecir el churn | 36 % → 43 % | **0.78 – 0.80 (cae 6–8 pts)** | **Reentrenar** |
 
 El drift de datos supera el umbral en **2024-12**. El modelo no se degrada hasta **2025-01**.
 
