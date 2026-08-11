@@ -86,6 +86,7 @@ def storage_emulator_host() -> str:
     """Endpoint del Cloud Storage emulado, o cadena vacía si vamos a GCP real."""
     return os.getenv("STORAGE_EMULATOR_HOST", "")
 
+
 # --- Monitoreo ------------------------------------------------------------
 
 # Si más del 30 % de las columnas muestran drift significativo, se considera
