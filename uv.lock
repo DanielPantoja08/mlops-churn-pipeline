@@ -2459,6 +2459,7 @@ dependencies = [
 api = [
     { name = "fastapi" },
     { name = "google-cloud-secret-manager" },
+    { name = "google-cloud-storage" },
     { name = "mlflow" },
     { name = "pydantic" },
     { name = "uvicorn", extra = ["standard"] },
@@ -2494,6 +2495,7 @@ monitoring = [
 requires-dist = [
     { name = "fastapi", marker = "extra == 'api'", specifier = ">=0.115" },
     { name = "google-cloud-secret-manager", marker = "extra == 'api'", specifier = ">=2.20" },
+    { name = "google-cloud-storage", marker = "extra == 'api'", specifier = ">=2.18" },
     { name = "lightgbm", specifier = ">=4.5" },
     { name = "mlflow", marker = "extra == 'api'", specifier = ">=2.17" },
     { name = "numpy", specifier = ">=2.0" },

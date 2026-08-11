@@ -74,14 +74,29 @@ gitdb==4.0.12
 gitpython==3.1.59
     # via mlflow-skinny
 google-api-core==2.34.0
-    # via google-cloud-secret-manager
+    # via
+    #   google-cloud-core
+    #   google-cloud-secret-manager
+    #   google-cloud-storage
 google-auth==2.56.3
     # via
     #   databricks-sdk
     #   google-api-core
+    #   google-cloud-core
     #   google-cloud-secret-manager
+    #   google-cloud-storage
+google-cloud-core==2.6.1
+    # via google-cloud-storage
 google-cloud-secret-manager==2.30.0
     # via mlops-churn-pipeline
+google-cloud-storage==3.13.1
+    # via mlops-churn-pipeline
+google-crc32c==1.8.0
+    # via
+    #   google-cloud-storage
+    #   google-resumable-media
+google-resumable-media==2.10.1
+    # via google-cloud-storage
 googleapis-common-protos==1.75.1
     # via
     #   google-api-core
@@ -278,6 +293,7 @@ requests==2.34.2
     #   databricks-sdk
     #   docker
     #   google-api-core
+    #   google-cloud-storage
     #   mlflow-skinny
 scikit-learn==1.9.0
     # via

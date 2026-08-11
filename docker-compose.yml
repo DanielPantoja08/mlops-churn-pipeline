@@ -1,22 +1,42 @@
 name: mlops-churn
 
+# =============================================================================
+# Stack completo en local: emulador de GCP + tracking server + API.
+#
+#   docker compose up -d --build
+#   docker compose --profile tools up -d dashboard    (añade el dashboard)
+#
+# La cadena de dependencias está declarada con `condition: service_healthy`, no
+# con un simple `depends_on`. La diferencia importa: `depends_on` a secas espera
+# a que el contenedor arranque, no a que el servicio esté listo, y la API
+# intentaría resolver el alias del modelo contra un MLflow que todavía no
+# escucha.
+# =============================================================================
+
+x-gcp-emulator: &gcp-emulator
+  # Estas variables son TODO lo que hace falta para que el código hable con el
+  # emulador en vez de con GCP real. Los SDK de Google las leen por su cuenta y
+  # cambian el endpoint y las credenciales solos: ni una línea de la aplicación
+  # sabe contra qué está corriendo.
+  STORAGE_EMULATOR_HOST: http://floci-gcp:4588
+  SECRET_MANAGER_EMULATOR_HOST: floci-gcp:4588
+  GOOGLE_CLOUD_PROJECT: floci-local
+
 services:
-  # Emulador de GCP. Sustituye a Cloud Storage y Secret Manager durante el
-  # desarrollo y en CI: sin cuenta, sin credenciales, sin cuota. Todos los
-  # servicios comparten el puerto 4588 vía negociación ALPN de HTTP/2.
+  # --- Emulador de GCP: Cloud Storage y Secret Manager ---------------------
   floci-gcp:
     image: floci/floci-gcp:latest
     container_name: floci-gcp
     ports:
       - "4588:4588"
     environment:
-      # Necesario para que las URLs que devuelve el emulador se resuelvan
-      # también desde otros contenedores, no solo desde el host.
+      # Sin FLOCI_GCP_HOSTNAME, las URLs que devuelve el emulador apuntarían a
+      # localhost y no se resolverían desde los otros contenedores.
       FLOCI_GCP_HOSTNAME: floci-gcp
       FLOCI_GCP_BASE_URL: http://floci-gcp:4588
       FLOCI_GCP_DEFAULT_PROJECT_ID: floci-local
-      # Los artefactos de MLflow y la caché de DVC deben sobrevivir a un
-      # reinicio del contenedor; el modo por defecto es en memoria.
+      # Por defecto guarda en memoria; los artefactos de modelo deben sobrevivir
+      # a un reinicio del contenedor.
       FLOCI_GCP_STORAGE_MODE: persistent
     volumes:
       - floci-data:/app/data
@@ -27,5 +47,90 @@ services:
       retries: 12
       start_period: 5s
 
+  # --- MLflow: tracking server y Model Registry ----------------------------
+  mlflow:
+    build:
+      context: .
+      args:
+        UV_GROUPS: "--extra api"
+    image: churn-api:latest
+    container_name: churn-mlflow
+    depends_on:
+      floci-gcp:
+        condition: service_healthy
+    ports:
+      - "5000:5000"
+    environment:
+      <<: *gcp-emulator
+      # MLflow 3 valida la cabecera Host para protegerse de DNS rebinding, y por
+      # defecto solo acepta localhost y rangos privados. Dentro de la red de
+      # Docker, la API llama a http://mlflow:5000, cuya cabecera Host es
+      # "mlflow:5000" y se rechaza con un 403 bastante desconcertante.
+      # Al definir esta variable se REEMPLAZA la lista por defecto, así que hay
+      # que volver a incluir localhost para que siga funcionando desde el host.
+      MLFLOW_SERVER_ALLOWED_HOSTS: "mlflow:*,localhost:*,127.0.0.1:*,[::1]:*"
+    # Backend sqlite (el Model Registry no funciona sobre un file store) y
+    # artefactos en el Cloud Storage emulado.
+    command:
+      - mlflow
+      - server
+      - --backend-store-uri=sqlite:////mlflow/mlflow.db
+      - --default-artifact-root=gs://churn-mlflow-artifacts/mlflow
+      - --host=0.0.0.0
+      - --port=5000
+    volumes:
+      - mlflow-db:/mlflow
+    healthcheck:
+      test: ["CMD-SHELL", "curl --fail --silent http://localhost:5000/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 20s
+
+  # --- API de inferencia ---------------------------------------------------
+  api:
+    build:
+      context: .
+      args:
+        UV_GROUPS: "--extra api"
+    image: churn-api:latest
+    container_name: churn-api
+    depends_on:
+      mlflow:
+        condition: service_healthy
+    ports:
+      - "8000:8000"
+    environment:
+      <<: *gcp-emulator
+      MLFLOW_TRACKING_URI: http://mlflow:5000
+      REGISTERED_MODEL_NAME: churn-model
+      DECISION_THRESHOLD: "0.5"
+    restart: unless-stopped
+
+  # --- Dashboard (perfil aparte: no hace falta para servir predicciones) ----
+  dashboard:
+    profiles: ["tools"]
+    build:
+      context: .
+      dockerfile: dashboard/Dockerfile
+    image: churn-dashboard:latest
+    container_name: churn-dashboard
+    depends_on:
+      api:
+        condition: service_started
+    ports:
+      - "8501:8501"
+    environment:
+      <<: *gcp-emulator
+      MLFLOW_TRACKING_URI: http://mlflow:5000
+      API_URL: http://api:8000
+    volumes:
+      # El dashboard lee los reportes de Evidently y las figuras del EDA que se
+      # generan en el host, en modo solo lectura.
+      - ./monitoring:/app/monitoring:ro
+      - ./docs:/app/docs:ro
+      - ./data:/app/data:ro
+
 volumes:
   floci-data:
+  mlflow-db:

@@ -51,6 +51,13 @@ import matplotlib
 
 matplotlib.use("Agg")  # sin backend interactivo: esto corre también en CI
 
+# La consola de Windows usa cp1252 por defecto y MLflow imprime emojis en sus
+# mensajes de progreso, lo que revienta el script con un UnicodeEncodeError a
+# mitad del entrenamiento. Forzar UTF-8 en la salida lo evita.
+if hasattr(sys.stdout, "reconfigure"):
+    sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+    sys.stderr.reconfigure(encoding="utf-8", errors="replace")
+
 import matplotlib.pyplot as plt  # noqa: E402
 import mlflow  # noqa: E402
 import numpy as np  # noqa: E402

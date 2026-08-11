@@ -1,0 +1,32 @@
+# Todo lo que no tiene que entrar en el contexto de build. Sin esto, Docker
+# enviaría al daemon los datos, los notebooks ejecutados y el venv local — cientos
+# de megas que ralentizan cada build y no se usan para nada.
+
+.git/
+.github/
+.dvc/
+.venv/
+venv/
+
+data/
+mlruns/
+mlflow.db
+monitoring/reports/
+notebooks/
+docs/
+dashboard/
+tests/
+scripts/
+
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.ruff_cache/
+.ipynb_checkpoints/
+
+*.md
+!README.md
+
+.env
+.DS_Store
+Thumbs.db
