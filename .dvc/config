@@ -1,0 +1,4 @@
+[core]
+    remote = floci-gcs
+['remote "floci-gcs"']
+    url = gs://churn-dvc-store

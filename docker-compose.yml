@@ -1,0 +1,31 @@
+name: mlops-churn
+
+services:
+  # Emulador de GCP. Sustituye a Cloud Storage y Secret Manager durante el
+  # desarrollo y en CI: sin cuenta, sin credenciales, sin cuota. Todos los
+  # servicios comparten el puerto 4588 vía negociación ALPN de HTTP/2.
+  floci-gcp:
+    image: floci/floci-gcp:latest
+    container_name: floci-gcp
+    ports:
+      - "4588:4588"
+    environment:
+      # Necesario para que las URLs que devuelve el emulador se resuelvan
+      # también desde otros contenedores, no solo desde el host.
+      FLOCI_GCP_HOSTNAME: floci-gcp
+      FLOCI_GCP_BASE_URL: http://floci-gcp:4588
+      FLOCI_GCP_DEFAULT_PROJECT_ID: floci-local
+      # Los artefactos de MLflow y la caché de DVC deben sobrevivir a un
+      # reinicio del contenedor; el modo por defecto es en memoria.
+      FLOCI_GCP_STORAGE_MODE: persistent
+    volumes:
+      - floci-data:/app/data
+    healthcheck:
+      test: ["CMD-SHELL", "exec 3<>/dev/tcp/127.0.0.1/4588 || exit 1"]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+      start_period: 5s
+
+volumes:
+  floci-data:
