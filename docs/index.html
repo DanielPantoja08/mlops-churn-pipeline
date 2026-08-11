@@ -1,0 +1,132 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Análisis exploratorio · MLOps Churn Pipeline</title>
+<style>
+  :root {
+    color-scheme: light;
+    --surface: #fcfcfb;
+    --plane: #f9f9f7;
+    --ink: #0b0b0b;
+    --ink-2: #52514e;
+    --muted: #898781;
+    --line: #e1e0d9;
+    --blue: #2a78d6;
+    --yellow: #eda100;
+    --red: #e34948;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      color-scheme: dark;
+      --surface: #1a1a19;
+      --plane: #0d0d0d;
+      --ink: #ffffff;
+      --ink-2: #c3c2b7;
+      --muted: #898781;
+      --line: #2c2c2a;
+      --blue: #3987e5;
+      --yellow: #c98500;
+      --red: #e66767;
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    padding: 3rem 1.25rem 5rem;
+    background: var(--plane);
+    color: var(--ink);
+    font: 16px/1.65 system-ui, -apple-system, "Segoe UI", sans-serif;
+  }
+  main { max-width: 52rem; margin: 0 auto; }
+  h1 { font-size: 1.9rem; line-height: 1.2; margin: 0 0 .5rem; }
+  .sub { color: var(--ink-2); margin: 0 0 2.5rem; font-size: 1.05rem; }
+  h2 { font-size: 1.15rem; margin: 3rem 0 1rem; }
+  a { color: var(--blue); }
+  ul.plain { list-style: none; padding: 0; margin: 0; }
+  .card {
+    display: block;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    padding: 1.1rem 1.25rem;
+    margin-bottom: .75rem;
+    text-decoration: none;
+    color: inherit;
+  }
+  .card:hover { border-color: var(--blue); }
+  .card .n { color: var(--muted); font-variant-numeric: tabular-nums; font-size: .85rem; }
+  .card .t { font-weight: 600; margin: .15rem 0 .3rem; color: var(--blue); }
+  .card .d { color: var(--ink-2); font-size: .93rem; margin: 0; }
+  .star { border-left: 3px solid var(--red); }
+  table { border-collapse: collapse; width: 100%; font-size: .93rem; }
+  th, td { text-align: left; padding: .55rem .7rem; border-bottom: 1px solid var(--line); }
+  th { color: var(--ink-2); font-weight: 600; }
+  .tag { display: inline-block; padding: .1rem .5rem; border-radius: 99px; font-size: .78rem; font-weight: 600; }
+  .tag.data { background: color-mix(in srgb, var(--yellow) 18%, transparent); color: var(--yellow); }
+  .tag.concept { background: color-mix(in srgb, var(--red) 18%, transparent); color: var(--red); }
+  footer { margin-top: 4rem; padding-top: 1.5rem; border-top: 1px solid var(--line); color: var(--muted); font-size: .9rem; }
+  .scroll { overflow-x: auto; }
+</style>
+</head>
+<body>
+<main>
+  <h1>Análisis exploratorio de datos</h1>
+  <p class="sub">
+    Fase 2 del <a href="https://github.com/DanielPantoja08/mlops-churn-pipeline">pipeline MLOps de predicción de churn</a>.
+    Cuatro notebooks que van de "qué hay en el dataset" a "por qué este modelo va a dejar de funcionar".
+  </p>
+
+  <h2>Los notebooks</h2>
+  <ul class="plain">
+    <li><a class="card" href="eda/01_exploracion_inicial.html">
+      <div class="n">01</div>
+      <div class="t">Exploración inicial</div>
+      <p class="d">Forma, tipos, nulos y duplicados. El desbalance de clases 80/20 que condiciona la elección de métricas, y la comprobación de que los 18 meses son comparables entre sí.</p>
+    </a></li>
+    <li><a class="card" href="eda/02_analisis_univariado.html">
+      <div class="n">02</div>
+      <div class="t">Análisis univariado</div>
+      <p class="d">Distribuciones, outliers y frecuencias. Por qué el análisis se restringe al periodo de referencia y no mezcla los tres regímenes del dataset.</p>
+    </a></li>
+    <li><a class="card" href="eda/03_analisis_bivariado.html">
+      <div class="n">03</div>
+      <div class="t">Análisis bivariado</div>
+      <p class="d">Qué variables se relacionan de verdad con el churn: chi-cuadrado con V de Cramér para las categóricas y correlación punto-biserial para las numéricas. Incluye una variable de control que, correctamente, no da señal.</p>
+    </a></li>
+    <li><a class="card star" href="eda/04_analisis_temporal.html">
+      <div class="n">04 · el importante</div>
+      <div class="t">Análisis temporal</div>
+      <p class="d">La pregunta que casi ningún EDA se hace: ¿sigue siendo esta la misma población? Separa visualmente el data drift del concept drift, y establece qué debe detectar el sistema de monitoreo.</p>
+    </a></li>
+  </ul>
+
+  <h2>Lo que encuentra el análisis</h2>
+  <div class="scroll">
+  <table>
+    <thead>
+      <tr><th>Cuándo</th><th>Qué ocurre</th><th>Efecto sobre el modelo</th></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="tag data">2024-09</span></td>
+        <td>Cambia la distribución de <code>monthly_usage_gb</code> (12 → 20 GB) y del método de pago</td>
+        <td><strong>Ninguno.</strong> La relación con el objetivo se mantiene intacta</td>
+      </tr>
+      <tr>
+        <td><span class="tag concept">2025-01</span></td>
+        <td><code>support_tickets_30d</code> deja de predecir el churn: pasa de ser el mejor predictor de comportamiento a no informar</td>
+        <td><strong>Se degrada.</strong> El modelo se apoyaba en esa señal</td>
+      </tr>
+    </tbody>
+  </table>
+  </div>
+
+  <footer>
+    Generado con <code>jupyter nbconvert</code> a partir de los notebooks del repositorio.
+    Los datos son sintéticos y reproducibles con <code>python src/data/generate_data.py</code>.
+  </footer>
+</main>
+</body>
+</html>
