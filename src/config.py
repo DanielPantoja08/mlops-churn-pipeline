@@ -70,10 +70,21 @@ CHAMPION_ALIAS = "champion"  # los stages están deprecados desde MLflow 2.9
 # `google-cloud-storage` y `gcsfs` leen STORAGE_EMULATOR_HOST y redirigen el
 # endpoint automáticamente, además de usar credenciales anónimas. Por eso el
 # mismo código sirve para Floci y para GCP real: solo cambia el entorno.
-STORAGE_EMULATOR_HOST = os.getenv("STORAGE_EMULATOR_HOST", "")
+#
+# Esto se expone como FUNCIÓN y no como constante a propósito. Una constante de
+# módulo se congela en el primer `import`, y entonces cualquier cambio posterior
+# del entorno queda ignorado — que es exactamente lo que hacía fallar a los
+# tests de integración cuando se ejecutaban en la misma sesión que los
+# unitarios: cada suite necesita un entorno distinto y solo ganaba la que
+# importase primero.
 GCP_PROJECT_ID = os.getenv("GOOGLE_CLOUD_PROJECT", "floci-local")
 DVC_BUCKET = os.getenv("DVC_BUCKET", "churn-dvc-store")
 MLFLOW_ARTIFACT_BUCKET = os.getenv("MLFLOW_ARTIFACT_BUCKET", "churn-mlflow-artifacts")
+
+
+def storage_emulator_host() -> str:
+    """Endpoint del Cloud Storage emulado, o cadena vacía si vamos a GCP real."""
+    return os.getenv("STORAGE_EMULATOR_HOST", "")
 
 # --- Monitoreo ------------------------------------------------------------
 
@@ -90,4 +101,4 @@ API_URL = os.getenv("API_URL", f"http://localhost:{API_PORT}")
 
 def using_emulator() -> bool:
     """True si estamos apuntando al emulador de GCP en vez de a la nube real."""
-    return bool(STORAGE_EMULATOR_HOST)
+    return bool(storage_emulator_host())

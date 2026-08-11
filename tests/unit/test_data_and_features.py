@@ -32,7 +32,7 @@ def dataset() -> pd.DataFrame:
     """18 meses con una base reducida: suficiente para que la señal se vea."""
     monthly = generate_dataset(n_active=900, seed=42, n_months=18)
     frames = []
-    for idx, (label, frame) in enumerate(monthly.items()):
+    for idx, (_label, frame) in enumerate(monthly.items()):
         frame = frame.copy()
         frame["month_index"] = idx
         frame["regimen"] = regime_for(idx)
@@ -110,7 +110,7 @@ def test_hay_data_drift_en_el_uso_mensual(dataset):
 def test_el_data_drift_es_una_rampa_no_un_escalon(dataset):
     """Un escalón haría trivial la detección; el drift real es progresivo."""
     medias = dataset.groupby("month_index").monthly_usage_gb.mean()
-    rampa = medias.loc[DATA_DRIFT_START:CONCEPT_DRIFT_START - 1]
+    rampa = medias.loc[DATA_DRIFT_START : CONCEPT_DRIFT_START - 1]
     assert rampa.is_monotonic_increasing
     # Ningún mes concentra el salto entero.
     salto_total = medias.iloc[-1] - medias.iloc[0]

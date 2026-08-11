@@ -1,0 +1,156 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+# Un push nuevo cancela la ejecución anterior de la misma rama: no tiene sentido
+# gastar minutos validando un commit que ya ha quedado obsoleto.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  PYTHON_VERSION: "3.12"
+  UV_LINK_MODE: copy
+
+jobs:
+  # ---------------------------------------------------------------------------
+  lint:
+    name: Lint y formato
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Instalar uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+          cache-dependency-glob: uv.lock
+
+      - name: Instalar dependencias
+        run: uv sync --frozen --only-group dev
+
+      - run: uv run ruff check --output-format=github .
+      - run: uv run ruff format --check .
+
+  # ---------------------------------------------------------------------------
+  test:
+    name: Tests unitarios
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Instalar uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+          cache-dependency-glob: uv.lock
+
+      - name: Instalar dependencias
+        run: uv sync --frozen --extra api --group dev
+
+      # Estos tests no necesitan datos ni servicios: generan su propio dataset
+      # en memoria y registran su propio modelo en un MLflow temporal. Entre
+      # ellos está el que verifica que el data drift NO degrada el modelo y el
+      # concept drift SÍ, que es la afirmación central del proyecto.
+      - name: pytest
+        run: uv run pytest tests/unit -v --tb=short
+
+  # ---------------------------------------------------------------------------
+  integration:
+    name: Integración contra GCP emulado
+    runs-on: ubuntu-latest
+
+    # Floci se levanta como SERVICE CONTAINER del job, igual que se haría con
+    # una base de datos de prueba. No se instala nada en el runner.
+    #
+    # Esto permite validar en cada push la integración con Cloud Storage y
+    # Secret Manager — incluido el ciclo completo de subir un artefacto de
+    # modelo y volver a cargarlo desde el registry — sin cuenta de GCP, sin
+    # gastar cuota y sin exponer credenciales reales en un job que no despliega
+    # nada.
+    services:
+      floci-gcp:
+        image: floci/floci-gcp:latest
+        ports:
+          - 4588:4588
+        env:
+          FLOCI_GCP_DEFAULT_PROJECT_ID: floci-local
+
+    env:
+      GCP_EMULATOR_ENDPOINT: http://localhost:4588
+      STORAGE_EMULATOR_HOST: http://localhost:4588
+      SECRET_MANAGER_EMULATOR_HOST: localhost:4588
+      GOOGLE_CLOUD_PROJECT: floci-local
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Instalar uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+          cache-dependency-glob: uv.lock
+
+      - name: Instalar dependencias
+        run: uv sync --frozen --extra api --group dev
+
+      # Crea buckets y secretos, igual que haría un `terraform apply` contra
+      # GCP real.
+      - name: Preparar el emulador
+        run: uv run python scripts/bootstrap_floci.py
+
+      # En CI, la suite de integración FALLA si el emulador no responde, en vez
+      # de saltarse (ver tests/integration/conftest.py). Un skip silencioso deja
+      # el workflow en verde sin haber probado nada.
+      - name: pytest de integración
+        run: uv run pytest tests/integration -v --tb=short
+
+  # ---------------------------------------------------------------------------
+  docker:
+    name: Build de la imagen
+    runs-on: ubuntu-latest
+    # Solo se construye si el código está limpio y probado. Construir una imagen
+    # que no pasa los tests es gastar minutos en algo que no se va a desplegar.
+    needs: [lint, test, integration]
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: docker/setup-buildx-action@v3
+
+      - name: Build (sin push)
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: false
+          load: true
+          tags: churn-api:${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      # Construir la imagen no demuestra que arranque. Este paso la levanta de
+      # verdad y comprueba que responde: sin Model Registry disponible debe
+      # contestar 503 en /health, que es la degradación controlada esperada, y
+      # no morirse ni quedarse colgada.
+      - name: Comprobar que el contenedor arranca
+        run: |
+          docker run -d --name smoke -p 8000:8000 churn-api:${{ github.sha }}
+          for i in $(seq 1 30); do
+            code=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:8000/health || echo 000)
+            if [ "$code" = "503" ] || [ "$code" = "200" ]; then
+              echo "La API responde con HTTP $code"
+              exit 0
+            fi
+            sleep 2
+          done
+          echo "La API no respondió a tiempo"
+          docker logs smoke
+          exit 1
+
+      - name: Logs del contenedor si algo falló
+        if: failure()
+        run: docker logs smoke || true

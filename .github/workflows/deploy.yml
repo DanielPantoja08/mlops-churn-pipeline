@@ -1,0 +1,106 @@
+name: Deploy a GCP
+
+# =============================================================================
+# ESTE WORKFLOW ESTÁ ESCRITO Y NO ACTIVO. Es deliberado.
+#
+# El proyecto corre íntegramente contra Floci, un emulador de GCP en contenedor.
+# Floci cubre Cloud Storage y Secret Manager, pero no Cloud Run ni Artifact
+# Registry, así que el despliegue es la única parte que no se puede validar sin
+# una cuenta real.
+#
+# Se deja separado del workflow de CI a propósito, y no como un job más con un
+# `if` que lo desactiva:
+#
+#   · CI se mantiene en verde y el badge del README dice la verdad. Un job de
+#     deploy permanentemente saltado en el pipeline principal es ruido que la
+#     gente aprende a ignorar.
+#   · `workflow_dispatch` obliga a lanzarlo a mano. Un despliegue a producción
+#     no debería ocurrir por escribir en una rama.
+#   · Las credenciales de GCP solo se tocan en el job que realmente las
+#     necesita. El de integración no ve ningún secreto porque habla con un
+#     emulador.
+#
+# PARA ACTIVARLO hacen falta:
+#   1. Un proyecto de GCP con Cloud Run y Artifact Registry habilitados.
+#   2. Workload Identity Federation entre GitHub y GCP (preferible a una clave
+#      de cuenta de servicio en un secreto: sin credenciales de larga duración).
+#   3. Estas variables y secretos en el repositorio:
+#        vars.GCP_PROJECT_ID, vars.GCP_REGION, vars.ARTIFACT_REPO
+#        secrets.GCP_WORKLOAD_IDENTITY_PROVIDER, secrets.GCP_SERVICE_ACCOUNT
+#   4. Un bucket de GCS real para los artefactos de MLflow y un tracking server
+#      accesible desde Cloud Run.
+#
+# El código de la aplicación no cambia nada para pasar de Floci a GCP real: los
+# SDK de Google leen STORAGE_EMULATOR_HOST y, si no está, van a la nube. Ese es
+# justamente el motivo de haber montado la integración así.
+# =============================================================================
+
+on:
+  workflow_dispatch:
+    inputs:
+      confirmar:
+        description: 'Escribe "desplegar" para confirmar'
+        required: true
+        default: ""
+
+env:
+  SERVICE_NAME: churn-api
+  IMAGE_NAME: churn-api
+
+jobs:
+  deploy:
+    name: Build, push y deploy
+    runs-on: ubuntu-latest
+    if: ${{ inputs.confirmar == 'desplegar' }}
+
+    permissions:
+      contents: read
+      id-token: write # necesario para Workload Identity Federation
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Autenticarse en GCP
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ secrets.GCP_SERVICE_ACCOUNT }}
+
+      - uses: google-github-actions/setup-gcloud@v2
+
+      - name: Configurar Docker para Artifact Registry
+        run: gcloud auth configure-docker ${{ vars.GCP_REGION }}-docker.pkg.dev --quiet
+
+      - name: Build y push
+        env:
+          REGISTRY: ${{ vars.GCP_REGION }}-docker.pkg.dev/${{ vars.GCP_PROJECT_ID }}/${{ vars.ARTIFACT_REPO }}
+        run: |
+          docker build -t "$REGISTRY/$IMAGE_NAME:${{ github.sha }}" \
+                       -t "$REGISTRY/$IMAGE_NAME:latest" .
+          docker push "$REGISTRY/$IMAGE_NAME:${{ github.sha }}"
+          docker push "$REGISTRY/$IMAGE_NAME:latest"
+
+      - name: Desplegar en Cloud Run
+        env:
+          REGISTRY: ${{ vars.GCP_REGION }}-docker.pkg.dev/${{ vars.GCP_PROJECT_ID }}/${{ vars.ARTIFACT_REPO }}
+        run: |
+          gcloud run deploy "$SERVICE_NAME" \
+            --image "$REGISTRY/$IMAGE_NAME:${{ github.sha }}" \
+            --region "${{ vars.GCP_REGION }}" \
+            --platform managed \
+            --allow-unauthenticated \
+            --port 8000 \
+            --memory 2Gi \
+            --set-env-vars "MLFLOW_TRACKING_URI=${{ secrets.MLFLOW_TRACKING_URI }}" \
+            --set-env-vars "MLFLOW_ARTIFACT_BUCKET=${{ vars.MLFLOW_ARTIFACT_BUCKET }}" \
+            --set-env-vars "GOOGLE_CLOUD_PROJECT=${{ vars.GCP_PROJECT_ID }}"
+
+      # Desplegar no es lo mismo que funcionar: si el modelo no se puede
+      # resolver desde el registry, /health devuelve 503 y el despliegue debe
+      # constar como fallido.
+      - name: Verificar el servicio desplegado
+        run: |
+          URL=$(gcloud run services describe "$SERVICE_NAME" \
+                --region "${{ vars.GCP_REGION }}" --format='value(status.url)')
+          echo "Servicio desplegado en $URL"
+          curl --fail --silent --show-error "$URL/health"

@@ -182,4 +182,24 @@ def bare_axis(ax) -> None:
     ax.tick_params(left=False, labelleft=False)
 
 
-plt  # re-exportado por conveniencia en los notebooks
+# `plt` se re-exporta a propósito: los notebooks hacen
+# `from src.viz import plt, set_style` y así no pueden olvidarse de aplicar el
+# estilo por importar matplotlib directamente.
+__all__ = [
+    "DIVERGING",
+    "GRID",
+    "INK",
+    "INK_MUTED",
+    "INK_SECONDARY",
+    "REGIME_COLORS",
+    "REGIME_LABELS",
+    "SEQUENTIAL",
+    "SERIES",
+    "STATUS",
+    "SURFACE",
+    "annotate_regimes",
+    "bare_axis",
+    "plt",
+    "save_figure",
+    "set_style",
+]

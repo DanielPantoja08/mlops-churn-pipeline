@@ -42,6 +42,23 @@ from src.features.build_features import (  # noqa: E402
 )
 
 
+@pytest.fixture(scope="session", autouse=True)
+def isolated_env():
+    """Aísla los tests unitarios de cualquier emulador que hubiera configurado.
+
+    Se repite lo de arriba, pero en tiempo de ejecución en vez de al importar:
+    si en la misma sesión corren antes los tests de integración, habrán dejado
+    `STORAGE_EMULATOR_HOST` puesto, y entonces la API de estos tests leería la
+    URI de MLflow del Secret Manager emulado y acabaría hablando con el registry
+    de desarrollo en vez de con el temporal de la fixture.
+    """
+    os.environ.pop("STORAGE_EMULATOR_HOST", None)
+    os.environ.pop("SECRET_MANAGER_EMULATOR_HOST", None)
+    os.environ.pop("GOOGLE_APPLICATION_CREDENTIALS", None)
+    os.environ["MLFLOW_TRACKING_URI"] = f"sqlite:///{(_TMP_DIR / 'mlflow.db').as_posix()}"
+    yield
+
+
 @pytest.fixture(scope="session")
 def sample_data():
     """Un dataset pequeño generado en memoria. Rápido y sin tocar disco."""

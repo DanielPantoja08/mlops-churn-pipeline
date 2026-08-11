@@ -61,9 +61,7 @@ class CustomerFeatures(BaseModel):
     )
     tenure_months: int = Field(..., ge=0, le=600, description="Meses de antigüedad")
     monthly_charges: float = Field(..., gt=0, le=1000, description="Cargo mensual")
-    payment_method: str = Field(
-        ..., min_length=1, max_length=60, description="Método de pago"
-    )
+    payment_method: str = Field(..., min_length=1, max_length=60, description="Método de pago")
     paperless_billing: Literal["Yes", "No"] = Field(..., description="¿Factura electrónica?")
 
     # Comportamiento
@@ -129,9 +127,7 @@ class BatchResponse(BaseModel):
 
 class HealthResponse(BaseModel):
     model_config = ConfigDict(
-        json_schema_extra={
-            "example": {"status": "ok", "model_loaded": True, "model_version": "1"}
-        }
+        json_schema_extra={"example": {"status": "ok", "model_loaded": True, "model_version": "1"}}
     )
 
     status: Literal["ok", "degraded"]

@@ -272,7 +272,9 @@ def distribution_for(month_index: int) -> MonthlyDistribution:
     total = sum(payment_probs)
     payment_probs = [p / total for p in payment_probs]
 
-    return MonthlyDistribution(usage_mean=usage_mean, usage_sd=usage_sd, payment_probs=payment_probs)
+    return MonthlyDistribution(
+        usage_mean=usage_mean, usage_sd=usage_sd, payment_probs=payment_probs
+    )
 
 
 def betas_for(month_index: int) -> Betas:
@@ -307,12 +309,9 @@ def _new_customers(
         rng.normal(70.0, 25.0, size=n) + contract_discount, 18.0, 190.0
     ).round(2)
 
-    if is_initial_cohort:
-        # La base inicial ya tiene historia: antigüedades repartidas.
-        tenure = rng.integers(0, 60, size=n)
-    else:
-        # Los clientes que entran después empiezan casi desde cero.
-        tenure = rng.integers(0, 3, size=n)
+    # La base inicial ya tiene historia, con antigüedades repartidas; los
+    # clientes que entran en meses posteriores empiezan casi desde cero.
+    tenure = rng.integers(0, 60, size=n) if is_initial_cohort else rng.integers(0, 3, size=n)
 
     return pd.DataFrame(
         {
@@ -359,9 +358,7 @@ def _refresh_behaviour(
     ).round(1)
 
     # Los impagos se concentran en quien paga con cheque electrónico.
-    late_lambda = np.where(
-        customers["payment_method"].to_numpy() == "Electronic check", 0.75, 0.28
-    )
+    late_lambda = np.where(customers["payment_method"].to_numpy() == "Electronic check", 0.75, 0.28)
     customers["late_payments_3m"] = rng.poisson(late_lambda)
 
     return customers
@@ -534,9 +531,7 @@ def _summary(monthly: dict[str, pd.DataFrame]) -> pd.DataFrame:
                 "clientes": len(frame),
                 "churn_rate": round(frame["churn"].mean(), 4),
                 "uso_medio_gb": round(frame["monthly_usage_gb"].mean(), 2),
-                "corr_tickets_churn": round(
-                    frame["support_tickets_30d"].corr(frame["churn"]), 4
-                ),
+                "corr_tickets_churn": round(frame["support_tickets_30d"].corr(frame["churn"]), 4),
             }
         )
     return pd.DataFrame(rows)

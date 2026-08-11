@@ -364,8 +364,12 @@ def main() -> None:
     X_train, y_train = split_features_target(train_df, TARGET)
     X_val, y_val = split_features_target(val_df, TARGET)
 
-    print(f"Train      {TRAIN_MONTHS[0]}..{TRAIN_MONTHS[-1]}  {len(X_train):>6,} filas  churn {y_train.mean():.2%}")
-    print(f"Validación {VALIDATION_MONTHS[0]}..{VALIDATION_MONTHS[-1]}  {len(X_val):>6,} filas  churn {y_val.mean():.2%}\n")
+    print(
+        f"Train      {TRAIN_MONTHS[0]}..{TRAIN_MONTHS[-1]}  {len(X_train):>6,} filas  churn {y_train.mean():.2%}"
+    )
+    print(
+        f"Validación {VALIDATION_MONTHS[0]}..{VALIDATION_MONTHS[-1]}  {len(X_val):>6,} filas  churn {y_val.mean():.2%}\n"
+    )
 
     scale_pos_weight = float((y_train == 0).sum() / max((y_train == 1).sum(), 1))
     resultados: dict[str, tuple[str, dict[str, float]]] = {}

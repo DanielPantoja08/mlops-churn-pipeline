@@ -21,7 +21,7 @@ from __future__ import annotations
 import os
 from functools import lru_cache
 
-from src.config import GCP_PROJECT_ID, STORAGE_EMULATOR_HOST
+from src.config import GCP_PROJECT_ID, storage_emulator_host
 
 
 def _emulator_host() -> str:
@@ -34,8 +34,8 @@ def _emulator_host() -> str:
     explicit = os.getenv("SECRET_MANAGER_EMULATOR_HOST", "")
     if explicit:
         return explicit.replace("http://", "").replace("https://", "")
-    if STORAGE_EMULATOR_HOST:
-        return STORAGE_EMULATOR_HOST.replace("http://", "").replace("https://", "")
+    if storage := storage_emulator_host():
+        return storage.replace("http://", "").replace("https://", "")
     return ""
 
 
@@ -46,12 +46,18 @@ def storage_client():
     return storage.Client(project=GCP_PROJECT_ID)
 
 
-@lru_cache(maxsize=1)
 def secret_manager_client():
     """Cliente de Secret Manager, con canal inseguro si apuntamos al emulador."""
+    return _client_for(_emulator_host())
+
+
+# La caché va sobre el host y no sobre la función sin argumentos: si se cacheara
+# el cliente a secas, un cambio de endpoint (entre suites de test, o al pasar de
+# emulador a nube) seguiría usando el canal antiguo.
+@lru_cache(maxsize=4)
+def _client_for(host: str):
     from google.cloud import secretmanager
 
-    host = _emulator_host()
     if not host:
         return secretmanager.SecretManagerServiceClient()
 
