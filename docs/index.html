@@ -123,8 +123,26 @@
   </table>
   </div>
 
+  <h2>Informes de monitoreo</h2>
+  <p class="sub" style="margin-bottom:1rem">
+    Generados con Evidently AI comparando cada mes contra el periodo de entrenamiento.
+    Estos dos son los que sostienen el argumento del proyecto.
+  </p>
+  <ul class="plain">
+    <li><a class="card" href="monitoring/drift_2024-12.html">
+      <div class="n">2024-12 · <span class="tag data">data drift</span></div>
+      <div class="t">Drift por encima del umbral, modelo intacto</div>
+      <p class="d">El 36 % de las columnas ha cambiado de distribución y el AUC sigue en 0,859. Es el caso que demuestra que reentrenar ante cada alerta de drift sería un error.</p>
+    </a></li>
+    <li><a class="card star" href="monitoring/drift_2025-01.html">
+      <div class="n">2025-01 · <span class="tag concept">concept drift</span></div>
+      <div class="t">La degradación real</div>
+      <p class="d">El AUC cae de 0,865 a 0,798. La distribución apenas se mueve respecto al mes anterior: lo que ha cambiado es la relación entre las variables y el objetivo.</p>
+    </a></li>
+  </ul>
+
   <footer>
-    Generado con <code>jupyter nbconvert</code> a partir de los notebooks del repositorio.
+    Generado con <code>jupyter nbconvert</code> y <code>evidently</code> a partir del repositorio.
     Los datos son sintéticos y reproducibles con <code>python src/data/generate_data.py</code>.
   </footer>
 </main>
