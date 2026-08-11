@@ -67,7 +67,7 @@ flowchart LR
     GEN --> DVC
     DVC --> FEAT --> TRAIN
     TRAIN --> TRACK --> REG
-    TRAIN -.artefactos.-> GCS
+    TRAIN -.->|artefactos| GCS
     REG -->|"resuelve el alias<br/>al arrancar"| API
     DVC --> MON
     REG --> MON
