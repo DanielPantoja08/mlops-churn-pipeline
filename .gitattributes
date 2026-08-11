@@ -1,0 +1,11 @@
+# Normaliza finales de línea: el repo se desarrolla en Windows pero corre en
+# contenedores Linux (CI, Docker). Sin esto, los scripts y el Dockerfile
+# pueden llegar al contenedor con CRLF y fallar.
+* text=auto eol=lf
+
+*.png binary
+*.jpg binary
+*.csv binary
+
+# Los notebooks se guardan con sus salidas para que se rendericen en GitHub.
+*.ipynb text eol=lf

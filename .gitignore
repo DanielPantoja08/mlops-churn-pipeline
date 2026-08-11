@@ -1,0 +1,33 @@
+# --- Python ---
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.ruff_cache/
+.ipynb_checkpoints/
+
+# --- Entornos ---
+.venv/
+venv/
+.env
+
+# --- Datos (versionados con DVC, no con git) ---
+/data/raw/*.csv
+/data/processed/
+
+# --- MLflow ---
+mlruns/
+mlflow.db
+*.pkl
+*.joblib
+
+# --- Monitoreo (los reportes se regeneran) ---
+/monitoring/reports/
+
+# --- Floci (estado persistido del emulador GCP) ---
+/.floci-data/
+
+# --- Sistema operativo ---
+.DS_Store
+Thumbs.db
+desktop.ini
