@@ -14,9 +14,10 @@ mlflow.db
 monitoring/reports/
 notebooks/
 docs/
-dashboard/
 tests/
 scripts/
+# `dashboard/` NO se excluye: dashboard/Dockerfile lo necesita en el contexto.
+# La imagen de la API tampoco lo copia, así que no le añade peso.
 
 __pycache__/
 *.py[cod]

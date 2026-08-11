@@ -50,8 +50,11 @@ jobs:
           enable-cache: true
           cache-dependency-glob: uv.lock
 
+      # Se incluye el grupo `dashboard` para que los tests del panel de
+      # Streamlit se ejecuten de verdad en vez de saltarse: `AppTest` corre el
+      # script completo y detecta excepciones que un healthcheck HTTP no ve.
       - name: Instalar dependencias
-        run: uv sync --frozen --extra api --group dev
+        run: uv sync --frozen --extra api --group dev --group dashboard
 
       # Estos tests no necesitan datos ni servicios: generan su propio dataset
       # en memoria y registran su propio modelo en un MLflow temporal. Entre

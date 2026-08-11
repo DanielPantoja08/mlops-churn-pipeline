@@ -110,11 +110,21 @@ def client(registered_champion):
     donde la API carga el modelo. Sin el `with`, el modelo nunca se cargaría y
     todos los tests darían 503.
     """
+    import time
+
     from fastapi.testclient import TestClient
 
-    from src.api.main import app
+    from src.api.main import app, state
 
     with TestClient(app) as test_client:
+        # La API carga el modelo en un hilo aparte para no bloquear el arranque
+        # (ver el `lifespan` de src/api/main.py), así que aquí hay que esperar a
+        # que termine. Sin esta espera, los tests serían una carrera: unas veces
+        # verdes y otras 503, según lo que tardase el hilo.
+        for _ in range(600):
+            if state.ready or state.error:
+                break
+            time.sleep(0.05)
         yield test_client
 
 

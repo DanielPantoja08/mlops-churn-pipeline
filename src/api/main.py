@@ -30,6 +30,7 @@ from __future__ import annotations
 
 import logging
 import os
+import threading
 from contextlib import asynccontextmanager
 from typing import Any
 
@@ -62,12 +63,13 @@ RISK_BANDS = ((0.35, "bajo"), (0.65, "medio"))
 
 
 class ModelState:
-    """Estado del modelo cargado. Se rellena en el arranque."""
+    """Estado del modelo cargado. Se rellena en segundo plano tras el arranque."""
 
     def __init__(self) -> None:
         self.model: Any = None
         self.info: Any = None
         self.error: str | None = None
+        self.loading: bool = False
 
     @property
     def ready(self) -> bool:
@@ -76,6 +78,12 @@ class ModelState:
     @property
     def version(self) -> str | None:
         return self.info.version if self.info else None
+
+    @property
+    def detail(self) -> str:
+        if self.loading:
+            return "Cargando el modelo desde el Model Registry..."
+        return self.error or "El modelo no está cargado."
 
 
 state = ModelState()
@@ -92,6 +100,7 @@ def load_model() -> None:
     """Carga el campeón del registry. No lanza: deja el motivo en `state.error`."""
     from src import tracking
 
+    state.loading = True
     try:
         # La URI del tracking server puede venir de Secret Manager (emulado por
         # Floci en desarrollo y en CI, real en producción). Si no está
@@ -118,11 +127,28 @@ def load_model() -> None:
         state.info = None
         state.error = f"{type(exc).__name__}: {exc}"
         logger.error("No se pudo cargar el modelo: %s", state.error)
+    finally:
+        state.loading = False
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    load_model()
+    """Arranca el servidor SIN esperar a que el modelo esté cargado.
+
+    Cargar el modelo dentro del `lifespan` de forma síncrona parecía razonable y
+    resultó ser un fallo real, detectado en CI: si el Model Registry no está
+    accesible, MLflow no falla al momento — reintenta con backoff exponencial
+    durante varios minutos. Y mientras el `lifespan` no termina, uvicorn no
+    empieza a atender peticiones, así que el servicio no responde ni siquiera a
+    `/health`. El orquestador solo ve un contenedor que no contesta y lo reinicia
+    en bucle, sin ninguna pista de qué está pasando.
+
+    Es la diferencia entre un fallo rápido y uno lento: la degradación
+    controlada solo funciona si el proceso llega a arrancar. Cargando en un hilo
+    aparte, el servidor atiende desde el primer segundo y `/health` va contando
+    la verdad — primero «cargando», y después «listo» o el error concreto.
+    """
+    threading.Thread(target=load_model, name="model-loader", daemon=True).start()
     yield
     state.model = None
 
@@ -146,7 +172,7 @@ def _require_model() -> None:
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
             detail=(
                 "El modelo no está disponible. Comprueba que el Model Registry es "
-                f"accesible y que existe el alias @champion. Motivo: {state.error}"
+                f"accesible y que existe el alias @champion. Motivo: {state.detail}"
             ),
         )
 
@@ -176,7 +202,7 @@ def health() -> JSONResponse:
         payload = HealthResponse(status="ok", model_loaded=True, model_version=state.version)
         return JSONResponse(status_code=200, content=payload.model_dump())
 
-    payload = HealthResponse(status="degraded", model_loaded=False, detail=state.error)
+    payload = HealthResponse(status="degraded", model_loaded=False, detail=state.detail)
     return JSONResponse(status_code=503, content=payload.model_dump())
 
 

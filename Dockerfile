@@ -65,6 +65,12 @@ RUN mkdir -p /mlflow && chown appuser:appuser /mlflow
 
 WORKDIR /app
 
+# /app tiene que pertenecer al usuario sin privilegios: si MLFLOW_TRACKING_URI
+# cae al sqlite local por defecto, el proceso necesita poder crear el archivo.
+# Sin esto falla con un "unable to open database file" que MLflow reintenta con
+# backoff exponencial durante minutos.
+RUN chown appuser:appuser /app
+
 COPY --from=builder --chown=appuser:appuser /app/.venv /app/.venv
 COPY --chown=appuser:appuser src/ ./src/
 COPY --chown=appuser:appuser examples/ ./examples/

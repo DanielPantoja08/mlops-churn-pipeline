@@ -109,6 +109,9 @@ def set_style() -> None:
             "axes.spines.right": False,
             "axes.grid": True,
             "axes.grid.axis": "y",
+            # Sin esto, matplotlib dibuja la rejilla ENCIMA de las barras y se
+            # ven como líneas claras que las cortan por la mitad.
+            "axes.axisbelow": True,
             "grid.color": GRID,
             "grid.linewidth": 0.8,
             "grid.alpha": 1.0,

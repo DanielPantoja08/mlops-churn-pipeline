@@ -1,0 +1,268 @@
+{
+  "model": {
+    "name": "churn-model",
+    "version": "1",
+    "algorithm": "logistic_regression"
+  },
+  "reference_months": [
+    "2024-01",
+    "2024-02",
+    "2024-03",
+    "2024-04",
+    "2024-05",
+    "2024-06"
+  ],
+  "reference_roc_auc": 0.8594,
+  "thresholds": {
+    "drift_share": 0.3,
+    "auc_drop": 0.02
+  },
+  "history": [
+    {
+      "month": "2024-07",
+      "regime": "baseline",
+      "n_rows": 2650,
+      "drifted_columns_count": 1,
+      "drifted_columns_share": 0.0714,
+      "drifted_columns": [
+        "tenure_months"
+      ],
+      "prediction_drift_score": 0.0233,
+      "prediction_drift_detected": false,
+      "roc_auc": 0.8662,
+      "auc_delta": 0.0068,
+      "status": "OK",
+      "report_html": "monitoring/reports/drift_2024-07.html",
+      "report_json": "monitoring/reports/drift_2024-07.json"
+    },
+    {
+      "month": "2024-08",
+      "regime": "baseline",
+      "n_rows": 2675,
+      "drifted_columns_count": 2,
+      "drifted_columns_share": 0.1429,
+      "drifted_columns": [
+        "tenure_months",
+        "monthly_charges"
+      ],
+      "prediction_drift_score": 0.0144,
+      "prediction_drift_detected": false,
+      "roc_auc": 0.8626,
+      "auc_delta": 0.0031,
+      "status": "OK",
+      "report_html": "monitoring/reports/drift_2024-08.html",
+      "report_json": "monitoring/reports/drift_2024-08.json"
+    },
+    {
+      "month": "2024-09",
+      "regime": "data_drift",
+      "n_rows": 2700,
+      "drifted_columns_count": 3,
+      "drifted_columns_share": 0.2143,
+      "drifted_columns": [
+        "tenure_months",
+        "monthly_charges",
+        "monthly_usage_gb"
+      ],
+      "prediction_drift_score": 0.0971,
+      "prediction_drift_detected": false,
+      "roc_auc": 0.8686,
+      "auc_delta": 0.0092,
+      "status": "OK",
+      "report_html": "monitoring/reports/drift_2024-09.html",
+      "report_json": "monitoring/reports/drift_2024-09.json"
+    },
+    {
+      "month": "2024-10",
+      "regime": "data_drift",
+      "n_rows": 2725,
+      "drifted_columns_count": 4,
+      "drifted_columns_share": 0.2857,
+      "drifted_columns": [
+        "tenure_months",
+        "monthly_charges",
+        "monthly_usage_gb",
+        "avg_session_minutes"
+      ],
+      "prediction_drift_score": 0.1935,
+      "prediction_drift_detected": true,
+      "roc_auc": 0.8653,
+      "auc_delta": 0.0059,
+      "status": "OK",
+      "report_html": "monitoring/reports/drift_2024-10.html",
+      "report_json": "monitoring/reports/drift_2024-10.json"
+    },
+    {
+      "month": "2024-11",
+      "regime": "data_drift",
+      "n_rows": 2750,
+      "drifted_columns_count": 4,
+      "drifted_columns_share": 0.2857,
+      "drifted_columns": [
+        "tenure_months",
+        "monthly_charges",
+        "monthly_usage_gb",
+        "avg_session_minutes"
+      ],
+      "prediction_drift_score": 0.2866,
+      "prediction_drift_detected": true,
+      "roc_auc": 0.8467,
+      "auc_delta": -0.0128,
+      "status": "OK",
+      "report_html": "monitoring/reports/drift_2024-11.html",
+      "report_json": "monitoring/reports/drift_2024-11.json"
+    },
+    {
+      "month": "2024-12",
+      "regime": "data_drift",
+      "n_rows": 2775,
+      "drifted_columns_count": 5,
+      "drifted_columns_share": 0.3571,
+      "drifted_columns": [
+        "tenure_months",
+        "monthly_charges",
+        "monthly_usage_gb",
+        "avg_session_minutes",
+        "payment_method"
+      ],
+      "prediction_drift_score": 0.3543,
+      "prediction_drift_detected": true,
+      "roc_auc": 0.8587,
+      "auc_delta": -0.0007,
+      "status": "VIGILAR",
+      "report_html": "monitoring/reports/drift_2024-12.html",
+      "report_json": "monitoring/reports/drift_2024-12.json"
+    },
+    {
+      "month": "2025-01",
+      "regime": "concept_drift",
+      "n_rows": 2800,
+      "drifted_columns_count": 5,
+      "drifted_columns_share": 0.3571,
+      "drifted_columns": [
+        "tenure_months",
+        "monthly_charges",
+        "monthly_usage_gb",
+        "avg_session_minutes",
+        "payment_method"
+      ],
+      "prediction_drift_score": 0.3764,
+      "prediction_drift_detected": true,
+      "roc_auc": 0.7984,
+      "auc_delta": -0.061,
+      "status": "CRITICO",
+      "report_html": "monitoring/reports/drift_2025-01.html",
+      "report_json": "monitoring/reports/drift_2025-01.json"
+    },
+    {
+      "month": "2025-02",
+      "regime": "concept_drift",
+      "n_rows": 2824,
+      "drifted_columns_count": 6,
+      "drifted_columns_share": 0.4286,
+      "drifted_columns": [
+        "tenure_months",
+        "monthly_charges",
+        "monthly_usage_gb",
+        "avg_session_minutes",
+        "contract_type",
+        "payment_method"
+      ],
+      "prediction_drift_score": 0.4023,
+      "prediction_drift_detected": true,
+      "roc_auc": 0.796,
+      "auc_delta": -0.0634,
+      "status": "CRITICO",
+      "report_html": "monitoring/reports/drift_2025-02.html",
+      "report_json": "monitoring/reports/drift_2025-02.json"
+    },
+    {
+      "month": "2025-03",
+      "regime": "concept_drift",
+      "n_rows": 2850,
+      "drifted_columns_count": 6,
+      "drifted_columns_share": 0.4286,
+      "drifted_columns": [
+        "tenure_months",
+        "monthly_charges",
+        "monthly_usage_gb",
+        "avg_session_minutes",
+        "contract_type",
+        "payment_method"
+      ],
+      "prediction_drift_score": 0.4263,
+      "prediction_drift_detected": true,
+      "roc_auc": 0.7875,
+      "auc_delta": -0.072,
+      "status": "CRITICO",
+      "report_html": "monitoring/reports/drift_2025-03.html",
+      "report_json": "monitoring/reports/drift_2025-03.json"
+    },
+    {
+      "month": "2025-04",
+      "regime": "concept_drift",
+      "n_rows": 2875,
+      "drifted_columns_count": 6,
+      "drifted_columns_share": 0.4286,
+      "drifted_columns": [
+        "tenure_months",
+        "monthly_charges",
+        "monthly_usage_gb",
+        "avg_session_minutes",
+        "contract_type",
+        "payment_method"
+      ],
+      "prediction_drift_score": 0.4176,
+      "prediction_drift_detected": true,
+      "roc_auc": 0.7935,
+      "auc_delta": -0.066,
+      "status": "CRITICO",
+      "report_html": "monitoring/reports/drift_2025-04.html",
+      "report_json": "monitoring/reports/drift_2025-04.json"
+    },
+    {
+      "month": "2025-05",
+      "regime": "concept_drift",
+      "n_rows": 2900,
+      "drifted_columns_count": 6,
+      "drifted_columns_share": 0.4286,
+      "drifted_columns": [
+        "tenure_months",
+        "monthly_charges",
+        "monthly_usage_gb",
+        "avg_session_minutes",
+        "contract_type",
+        "payment_method"
+      ],
+      "prediction_drift_score": 0.4256,
+      "prediction_drift_detected": true,
+      "roc_auc": 0.7825,
+      "auc_delta": -0.0769,
+      "status": "CRITICO",
+      "report_html": "monitoring/reports/drift_2025-05.html",
+      "report_json": "monitoring/reports/drift_2025-05.json"
+    },
+    {
+      "month": "2025-06",
+      "regime": "concept_drift",
+      "n_rows": 2925,
+      "drifted_columns_count": 6,
+      "drifted_columns_share": 0.4286,
+      "drifted_columns": [
+        "tenure_months",
+        "monthly_charges",
+        "monthly_usage_gb",
+        "avg_session_minutes",
+        "contract_type",
+        "payment_method"
+      ],
+      "prediction_drift_score": 0.4401,
+      "prediction_drift_detected": true,
+      "roc_auc": 0.7929,
+      "auc_delta": -0.0665,
+      "status": "CRITICO",
+      "report_html": "monitoring/reports/drift_2025-06.html",
+      "report_json": "monitoring/reports/drift_2025-06.json"
+    }
+  ]
+}
