@@ -64,14 +64,28 @@ def secret_manager_client():
     return secretmanager.SecretManagerServiceClient(transport=transport)
 
 
-def read_secret(secret_id: str, default: str | None = None) -> str | None:
-    """Lee la última versión de un secreto.
+def secret_manager_available() -> bool:
+    """¿Tiene sentido siquiera intentar hablar con Secret Manager?
 
-    Si Secret Manager no está disponible (por ejemplo en los tests unitarios,
-    que corren sin el emulador levantado), devuelve `default` en vez de
-    reventar. Un servicio que no arranca porque no encuentra un secreto
-    opcional es un servicio frágil.
+    Sin esta comprobación, los tests unitarios (que corren sin emulador y sin
+    credenciales) construirían un cliente real, que se pone a buscar
+    Application Default Credentials y a consultar el servidor de metadatos de
+    GCE antes de rendirse. Son varios segundos de espera en cada test, para
+    acabar en el mismo sitio: no hay secretos.
     """
+    return bool(_emulator_host()) or bool(os.getenv("GOOGLE_APPLICATION_CREDENTIALS"))
+
+
+def read_secret(secret_id: str, default: str | None = None) -> str | None:
+    """Lee la última versión de un secreto, o `default` si no se puede.
+
+    Un servicio que no arranca porque no encuentra un secreto opcional es un
+    servicio frágil. Aquí la ausencia de Secret Manager degrada a la
+    configuración por entorno, que es exactamente lo que se quiere en local.
+    """
+    if not secret_manager_available():
+        return default
+
     name = f"projects/{GCP_PROJECT_ID}/secrets/{secret_id}/versions/latest"
     try:
         response = secret_manager_client().access_secret_version(request={"name": name})

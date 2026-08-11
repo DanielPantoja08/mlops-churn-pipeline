@@ -1,0 +1,16 @@
+{
+  "age": 42,
+  "gender": "F",
+  "region": "Centro",
+  "senior_citizen": "No",
+  "contract_type": "Month-to-month",
+  "tenure_months": 3,
+  "monthly_charges": 94.5,
+  "payment_method": "Electronic check",
+  "paperless_billing": "Yes",
+  "monthly_usage_gb": 8.2,
+  "support_tickets_30d": 3,
+  "avg_session_minutes": 18.4,
+  "num_services": 2,
+  "late_payments_3m": 2
+}

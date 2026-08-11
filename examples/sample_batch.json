@@ -1,0 +1,36 @@
+{
+  "customers": [
+    {
+      "age": 42,
+      "gender": "F",
+      "region": "Centro",
+      "senior_citizen": "No",
+      "contract_type": "Month-to-month",
+      "tenure_months": 3,
+      "monthly_charges": 94.5,
+      "payment_method": "Electronic check",
+      "paperless_billing": "Yes",
+      "monthly_usage_gb": 8.2,
+      "support_tickets_30d": 3,
+      "avg_session_minutes": 18.4,
+      "num_services": 2,
+      "late_payments_3m": 2
+    },
+    {
+      "age": 58,
+      "gender": "M",
+      "region": "Norte",
+      "senior_citizen": "No",
+      "contract_type": "Two year",
+      "tenure_months": 54,
+      "monthly_charges": 41.2,
+      "payment_method": "Credit card",
+      "paperless_billing": "No",
+      "monthly_usage_gb": 21.7,
+      "support_tickets_30d": 0,
+      "avg_session_minutes": 33.1,
+      "num_services": 5,
+      "late_payments_3m": 0
+    }
+  ]
+}
